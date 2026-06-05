@@ -6,9 +6,9 @@ compatibility: Requires Node.js (>=18) for both the PreviewShip CLI and the bund
 metadata:
   author: PreviewShip
   version: "1.1"
-  repository: https://github.com/blockdancez/PreviewShip
-  install: npx skills add blockdancez/PreviewShip --skill share-codex-chat -a codex -g --yes
-  installLocal: npx skills add blockdancez/PreviewShip --skill share-codex-chat -a codex --yes
+  repository: https://github.com/FicsxzOrc/PreviewShip
+  install: npx skills add FicsxzOrc/PreviewShip --skill share-codex-chat -a codex -g --yes
+  installLocal: npx skills add FicsxzOrc/PreviewShip --skill share-codex-chat -a codex --yes
 ---
 
 # Share Codex Chat
@@ -33,13 +33,13 @@ Install from the PreviewShip repository:
 Global install:
 
 ```bash
-npx skills add blockdancez/PreviewShip --skill share-codex-chat -a codex -g --yes
+npx skills add FicsxzOrc/PreviewShip --skill share-codex-chat -a codex -g --yes
 ```
 
 Project-local install, run from the project root:
 
 ```bash
-npx skills add blockdancez/PreviewShip --skill share-codex-chat -a codex --yes
+npx skills add FicsxzOrc/PreviewShip --skill share-codex-chat -a codex --yes
 ```
 
 ## Required output
@@ -50,6 +50,33 @@ At the end, return:
 - Any limitation that prevents a perfect transcript, such as missing earlier messages because the context was compacted.
 
 ## Workflow
+
+### 0. 首选：在线 1:1 导出（最高保真，agent 调用时优先走这条）
+
+这是本 skill 的**首选路径**，能做到与 Codex 桌面端逐像素一致——因为它直接抓 Codex 已经渲染好的真实 DOM + 它自己的全部 CSS，而不是手写模仿。
+
+前提：Codex 以调试端口运行。先检测：
+
+```bash
+curl -s http://127.0.0.1:9222/json/version >/dev/null 2>&1 && echo OPEN || echo CLOSED
+```
+
+- 若 `OPEN`，直接导出**当前对话**（不带 `--match` 即抓 agent 正在进行的这个会话）：
+
+```bash
+SKILL_DIR="<本 SKILL.md 所在目录>"
+node "$SKILL_DIR/scripts/export_from_codex.cjs" --out /tmp/codex-chat-share/index.html
+```
+
+  成功后**直接跳到第 6–7 步**（命名 + 部署），跳过下面的离线收集与渲染。
+
+- 若 `CLOSED`，告诉用户运行一次以开启调试端口（会话历史不丢），然后重新调用本 skill：
+
+```bash
+osascript -e 'quit app "Codex"'; open -a Codex --args --remote-debugging-port=9222
+```
+
+只有当用户明确不便开启调试端口时，才回退到下面第 1–5 步的离线渲染（marked 引擎，接近但非逐像素一致）。
 
 ### 1. Collect the transcript
 
